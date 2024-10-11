@@ -1,8 +1,9 @@
 "use client";
 
+import { SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from '@/types/global';
 import { useState, useEffect, useRef } from 'react';
 
-const Translator = () => {
+const VoiceInput = () => {
   const recognitionRef = useRef<SpeechRecognition>();
 
   const [isActive, setIsActive] = useState<boolean>(false);
@@ -43,9 +44,14 @@ const Translator = () => {
       setIsActive(false);
     };
 
-    recognitionRef.current.onresult = function (event) {
+    recognitionRef.current.onresult = function (event: SpeechRecognitionEvent) {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
+    };
+
+    recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech Recognition Error:", event.error);
+      setIsActive(false);
     };
 
     recognitionRef.current.start();
@@ -96,4 +102,4 @@ const Translator = () => {
   );
 };
 
-export default Translator;
+export default VoiceInput;
