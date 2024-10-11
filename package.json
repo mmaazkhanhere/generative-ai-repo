@@ -9,27 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@deepgram/sdk": "^3.8.0",
-    "@types/regenerator-runtime": "^0.13.7",
-    "axios": "^1.7.7",
-    "next": "14.2.14",
     "react": "^18",
     "react-dom": "^18",
-    "react-speech-recognition": "^3.10.0",
-    "socket.io": "^4.8.0",
-    "socket.io-client": "^4.8.0"
+    "next": "14.0.4"
   },
   "devDependencies": {
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/react-speech-recognition": "^3.9.5",
-    "@types/socket.io": "^3.0.1",
-    "@types/socket.io-client": "^1.4.36",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.14",
+    "autoprefixer": "^10.0.1",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "tailwindcss": "^3.3.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4"
   }
 }
