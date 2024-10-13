@@ -5,6 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from '@/types/global';
 
 import { FaMicrophone, FaStop } from "react-icons/fa";
+import axios from 'axios';
+import { surgeonQuery } from '@/actions/surgeon-query';
 
 const VoiceInput = () => {
   const recognitionRef = useRef<SpeechRecognition>();
@@ -47,9 +49,13 @@ const VoiceInput = () => {
       setIsActive(false);
     };
 
-    recognitionRef.current.onresult = function (event: SpeechRecognitionEvent) {
+    recognitionRef.current.onresult = async function (event: SpeechRecognitionEvent) {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
+
+      const response = await surgeonQuery(text)
+      console.log(response.status)
+      console.log(response.data)
     };
 
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
