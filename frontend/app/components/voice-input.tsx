@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react';
 import { SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from '@/types/global';
 
 import { FaMicrophone, FaStop } from "react-icons/fa";
-import axios from 'axios';
 import { surgeonQuery } from '@/actions/surgeon-query';
 
 const VoiceInput = () => {
@@ -14,6 +13,7 @@ const VoiceInput = () => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const [text, setText] = useState<string>('');
   const [voices, setVoices] = useState<Array<SpeechSynthesisVoice>>();
+  const [aiResponse, setAIResponse] = useState<string>('')
 
   const isSpeechDetected = false;
 
@@ -53,9 +53,8 @@ const VoiceInput = () => {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
 
-      const response = await surgeonQuery(text)
-      console.log(response.status)
-      console.log(response.data)
+      const response = await surgeonQuery(transcript)
+      setAIResponse(response.data)
     };
 
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -103,8 +102,11 @@ const VoiceInput = () => {
       </button>
 
 
-        <p className="mb-4">
+        <p>
           Surgeon Query: {text}
+        </p>
+        <p className="mb-4">
+          AI Response: {aiResponse}
         </p>
       </section>
   );
