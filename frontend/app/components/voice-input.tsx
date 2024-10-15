@@ -2,18 +2,24 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from '@/types/global';
+import PatientHistory from './patient-history';
+
+import { surgeonQuery } from '@/actions/surgeon-query';
 
 import { FaMicrophone, FaStop } from "react-icons/fa";
-import { surgeonQuery } from '@/actions/surgeon-query';
+
+import { SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from '@/types/global';
+
 
 const VoiceInput = () => {
   const recognitionRef = useRef<SpeechRecognition>();
 
   const [isActive, setIsActive] = useState<boolean>(false);
   const [text, setText] = useState<string>('');
+  const [patientHistory, setPatientHistory] = useState<string>('')
   const [voices, setVoices] = useState<Array<SpeechSynthesisVoice>>();
   const [aiResponse, setAIResponse] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isSpeechDetected = false;
 
@@ -52,9 +58,11 @@ const VoiceInput = () => {
     recognitionRef.current.onresult = async function (event: SpeechRecognitionEvent) {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
+      setIsLoading(true);
 
       const response = await surgeonQuery(transcript)
       setAIResponse(response.data)
+      setIsLoading(false)
     };
 
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -65,6 +73,8 @@ const VoiceInput = () => {
     recognitionRef.current.start();
   }
 
+  console.log(patientHistory)
+
   return (
       <section className="max-w-md w-full flex flex-col gap-y-5 rounded-xl overflow-hidden mx-auto">
         <div className="bg-zinc-200 p-4">
@@ -74,6 +84,8 @@ const VoiceInput = () => {
             </ul>
           </div>
         </div>
+
+        <PatientHistory setPatientHistory={setPatientHistory} />
 
         {isActive && (
         <div className="w-full h-12 rounded-lg mb-8 flex items-center justify-center space-x-2">
@@ -91,23 +103,35 @@ const VoiceInput = () => {
         </div>
       )}
 
-      <button
-        className={`w-full h-full flex items-center gap-x-2 justify-center uppercase font-semibold text-sm  ${isActive ? 'text-white bg-red-500' : 'text-zinc-200 bg-zinc-900'} color-white py-3 rounded-sm`}
-        onClick={handleOnRecord}
-      >
-        {
-          isActive ? <FaStop className='animate-pulse w-4 h-4' /> : <FaMicrophone className='w-4 h-4' />
-        }
-        {isActive ? 'Stop' : 'Ask AI'}
-      </button>
+      {
+        patientHistory.length > 0 && (
+          <>
+            <button
+                className={`w-full h-full flex items-center gap-x-2 justify-center uppercase font-semibold text-sm  ${isActive ? 'text-white bg-red-500' : 'text-zinc-200 bg-zinc-900'} color-white py-3 rounded-sm`}
+                onClick={handleOnRecord}
+            >
+                {
+                  isActive ? <FaStop className='animate-pulse w-4 h-4' /> : <FaMicrophone className='w-4 h-4' />
+                }
+                {isActive ? 'Stop' : 'Ask AI'}
+            </button>
+            <p>
+                Surgeon Query: {text}
+            </p>
+            {
+              isLoading ? (
+                <p className="mb-4">AI Response: Loading...</p> // Loading state
+              ) : (
+                <p className="mb-4">AI Response: {aiResponse}</p> // Show AI response
+              )
+            }
+          </>
+      
+        )
+      }
+      
 
-
-        <p>
-          Surgeon Query: {text}
-        </p>
-        <p className="mb-4">
-          AI Response: {aiResponse}
-        </p>
+        
       </section>
   );
 };
