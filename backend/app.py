@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0.1, top_p=0.9, api_key='AIzaSyD_n-us9oc2YQ4Nh1xjaIoIjaMWfzI_9VU')
+
 
 def get_gemini_response(query):
     response = llm.invoke(query)
