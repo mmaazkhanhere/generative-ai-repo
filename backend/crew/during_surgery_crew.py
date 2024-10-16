@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import tool
 
+from crewai.crews.crew_output import CrewOutput
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 
@@ -38,7 +40,7 @@ def query_pinecone(surgeon_query: str):
 
 def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
     # defining agents of the crew
-    manager_agent = Agent(llm=llm_model,
+    manager_agent: Agent = Agent(llm=llm_model,
                         role="Certified Operating Room Manager",
                         goal="Effectively manage surgeon queries and consult specialized agents to gather real-time insights for informed decision-making.",
                         backstory="This agent is tasked with managing the flow of queries from the surgeon {surgeon_query} during surgery. You consult with specialized agents, using patient history {patient_history}",
@@ -46,7 +48,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                         allow_delegation=False
                     )
 
-    anatomy_specialist_agent = Agent(llm=llm_model,
+    anatomy_specialist_agent: Agent = Agent(llm=llm_model,
                                     role="Accredited Human Anatomy Expert",
                                     goal="Provide clear, concise, and accurate anatomical insights in response to surgeon queries.",
                                     backstory="The agent specialize in human anatomy and are responsible for delivering precise anatomical details during surgery. When the surgeon asks a query {surgeon_query}, agent provide relevant and easily understandable insights that aid in the surgical process",
@@ -55,7 +57,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                                     tools=[query_pinecone]
                                 )
 
-    infection_prevention_agent = Agent(llm=llm_model,
+    infection_prevention_agent: Agent = Agent(llm=llm_model,
                                     role="Certified Infection Preventionist",
                                     goal="Provide concise and accurate infection prevention steps to minimize the risk of infections related to the surgeon's query.",
                                     backstory="The agent specialize in infection control and is responsible for advising on best practices to reduce infection risk during surgery. When the surgeon raises a query {surgeon_query}, the provide provide clear, brief, and actionable precautions to maintain a sterile environment and ensure patient safety.",
@@ -63,7 +65,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                                     allow_delegation=False
                                 )
 
-    risk_analysis_agent = Agent(llm=llm_model,
+    risk_analysis_agent: Agent = Agent(llm=llm_model,
                                 role="Licensed Surgical Risk Mitigation Expert",
                                 goal="Provide insights on potential risks related to the surgeon's query, taking the patient's history into account.",
                                 backstory="Agent specialize in surgical risk management and assess potential risks during procedures. When the surgeon asks a query {surgeon_query}, you evaluate the patient's history {patient_history} and provide concise, accurate insights to help mitigate risks and ensure patient safety.",
@@ -71,7 +73,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                                 allow_delegation=False
                             )
 
-    expert_surgeon_agent = Agent(llm=llm_model,
+    expert_surgeon_agent: Agent = Agent(llm=llm_model,
                                 role="Certified Surgical Consultant",
                                 goal="Provide concise, well-rounded responses to surgeon queries by synthesizing insights from specialized agents and considering the patient's history",
                                 backstory="This agent serve as the primary consultant during surgery, integrating insights from specialized agents to provide the surgeon with clear, actionable responses. The agent focus is on delivering accurate, to-the-point guidance that factors in both expert insights and the patient's medical history.",
@@ -81,7 +83,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                             )
 
     # Defining tasks for the agents
-    manager_task = Task(description=(
+    manager_task: Task = Task(description=(
                             "1. Receive and understand the surgeon's query: {surgeon_query}.\n"
                             "2. Consult with the appropriate specialized agents, including the "
                                 "Accredited Human Anatomy Expert, Certified Infection Preventionist, "
@@ -100,7 +102,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
     )
 
 
-    anatomy_task = Task(description=(
+    anatomy_task: Task = Task(description=(
                         "1. Receive the surgeon's query: {surgeon_query}.\n"
                         "2. Analyze the query to identify relevant anatomical structures, "
                             "functions, and relationships based on the specific area of concern and patient history {patient_history}.\n"
@@ -119,7 +121,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                 )
 
 
-    infection_prevention_task = Task(description=(
+    infection_prevention_task: Task = Task(description=(
                                     "1. Receive the surgeon's query: {surgeon_query}.\n"
                                     "2. Analyze the query to assess infection risks based on the specific surgical context and patient history {patient_history}.\n"
                                     "3. Provide concise and actionable infection prevention steps, including recommended sterilization procedures, "
@@ -135,7 +137,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                             )
 
 
-    risk_analysis_task = Task(description=(
+    risk_analysis_task: Task = Task(description=(
                                 "1. Receive the surgeon's query: {surgeon_query}.\n"
                                 "2. Analyze the query in conjunction with the patient's history: {patient_history}.\n"
                                 "3. Identify potential risks based on the patient's condition, surgical procedure, and any pre-existing factors.\n"
@@ -151,7 +153,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
                         )
 
 
-    expert_surgeon_task = Task(description=(
+    expert_surgeon_task: Task = Task(description=(
                                 "1. Receive the surgeon's query: {surgeon_query}.\n"
                                 "2. Gather insights from specialized agents, including the Accredited Human Anatomy Expert, Certified Infection Preventionist, and Licensed Surgical Risk Mitigation Expert.\n"
                                 "3. Synthesize the information provided by each agent, ensuring that the insights are cohesive and address all aspects of the surgeon's query.\n"
@@ -167,7 +169,7 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
 
 
     # Defining the crew
-    surgical_crew = Crew(
+    surgical_crew: Crew = Crew(
         agents=[manager_agent, anatomy_specialist_agent, infection_prevention_agent, risk_analysis_agent, expert_surgeon_agent],
         tasks=[manager_task, anatomy_task, infection_prevention_task, risk_analysis_task, expert_surgeon_task],
         verbose=True,
@@ -175,5 +177,5 @@ def during_surgery_crew(surgeon_query: str, patient_history: str)->str:
         process=Process.sequential
     )
 
-    result = surgical_crew.kickoff({'surgeon_query': surgeon_query, 'patient_history': patient_history})
-    return result
+    result: CrewOutput = surgical_crew.kickoff({'surgeon_query': surgeon_query, 'patient_history': patient_history})
+    return result.raw

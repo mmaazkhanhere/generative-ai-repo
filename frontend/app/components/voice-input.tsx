@@ -120,7 +120,7 @@ const VoiceInput = () => {
             </p>
             {
               isLoading ? (
-                <p className="mb-4">AI Response: Loading...</p> // Loading state
+                <p className="mb-4 animate-pulse text-sm text-gray-500">AI Response: Loading...</p> // Loading state
               ) : (
                 <p className="mb-4">AI Response: {aiResponse}</p> // Show AI response
               )
