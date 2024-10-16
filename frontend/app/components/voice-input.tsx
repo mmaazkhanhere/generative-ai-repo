@@ -60,7 +60,7 @@ const VoiceInput = () => {
       setText(transcript);
       setIsLoading(true);
 
-      const response = await surgeonQuery(transcript)
+      const response = await surgeonQuery(transcript, patientHistory)
       setAIResponse(response.data)
       setIsLoading(false)
     };

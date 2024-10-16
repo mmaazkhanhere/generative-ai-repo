@@ -7,8 +7,10 @@ from crewai_tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 
-from ..helper_functions.pinecone_vectore_store import pinecone_vector_store
-from ..helper_functions.embeddings import embeddings
+from helper_functions.pinecone_vectore_store import pinecone_vector_store
+from helper_functions.embeddings import embeddings
+
+
 
 load_dotenv()
 
