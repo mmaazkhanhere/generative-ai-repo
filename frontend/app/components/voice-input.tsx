@@ -16,46 +16,41 @@ const VoiceInput = () => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const [text, setText] = useState<string>('');
   const [patientHistory, setPatientHistory] = useState<string>('');
-  const [voices, setVoices] = useState<Array<SpeechSynthesisVoice>>();
   const [aiResponse, setAIResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // Pre-selected Sound Model
+  // Huggingface pretrained model name and inference endpoint
   const SELECTED_SOUND_MODEL = {
     name: "Speechbrain - Ljspeech",
-    url: "https://api-inference.huggingface.co/models/speechbrain/tts-tacotron2-ljspeech",
+    url: "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits",
   };
-
-  useEffect(() => {
-    const availableVoices = window.speechSynthesis.getVoices();
-    if (Array.isArray(availableVoices) && availableVoices.length > 0) {
-      setVoices(availableVoices);
-      return;
-    }
-    if ('onvoiceschanged' in window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        const updatedVoices = window.speechSynthesis.getVoices();
-        setVoices(updatedVoices);
-      };
-    }
-  }, []);
 
   /**
    * Handles starting and stopping the speech recognition.
    */
-  function handleOnRecord() {
+  const handleOnRecord = () => {
     if (isActive) {
       recognitionRef.current?.stop();
       setIsActive(false);
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setErrorMessage("Speech Recognition API is not supported in this browser.");
+      return;
+    }
+
     recognitionRef.current = new SpeechRecognition();
+    // recognitionRef.current.lang = 'en-US'; // Set language as needed
+    // recognitionRef.current.interimResults = false;
+    // recognitionRef.current.maxAlternatives = 1;
 
     recognitionRef.current.onstart = () => {
       setIsActive(true);
+      setErrorMessage('');
     };
 
     recognitionRef.current.onend = () => {
@@ -66,14 +61,17 @@ const VoiceInput = () => {
       const transcript = event.results[0][0].transcript;
       setText(transcript);
       setIsLoading(true);
+      setErrorMessage('');
 
       try {
         const response = await surgeonQuery(transcript, patientHistory);
         setAIResponse(response.data);
-      } catch (error) {
+      } 
+      catch (error) {
         console.error("Error fetching AI response:", error);
         setAIResponse("Sorry, there was an error processing your request.");
-      } finally {
+      } 
+      finally {
         setIsLoading(false);
       }
     };
@@ -81,6 +79,7 @@ const VoiceInput = () => {
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error("Speech Recognition Error:", event.error);
       setIsActive(false);
+      setErrorMessage("Speech recognition error occurred. Please try again.");
     };
 
     recognitionRef.current.start();
@@ -89,6 +88,7 @@ const VoiceInput = () => {
   /**
    * Generates audio from the AI response using the selected sound model.
    */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const generateAndPlayAudio = async (text: string) => {
     try {
       const response = await fetch("/api/generate", {
@@ -103,19 +103,19 @@ const VoiceInput = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch audio data.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate audio.");
       }
 
       const data = await response.arrayBuffer();
-      const blob = new Blob([data], { type: "audio/mpeg" });
+      const blob = new Blob([data], { type: "audio/mpeg" }); 
       const generatedAudioUrl = URL.createObjectURL(blob);
       setAudioUrl(generatedAudioUrl);
 
-      // Automatically play the audio
-      const audio = new Audio(generatedAudioUrl);
-      audio.play();
-    } catch (error) {
+    } 
+    catch (error: any) {
       console.error("Error generating audio:", error);
+      setErrorMessage(`Error generating audio: ${error.message}`);
     }
   };
 
@@ -126,14 +126,29 @@ const VoiceInput = () => {
     if (aiResponse.trim() !== "") {
       generateAndPlayAudio(aiResponse);
     }
-    // Cleanup the audio URL when component unmounts or audioUrl changes
+    // Cleanup the audio URL when component unmounts or before setting a new one
     return () => {
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [aiResponse]);
+
+  /**
+   * useEffect to auto-play the audio when audioUrl changes.
+   */
+  useEffect(() => {
+    if (audioUrl) {
+      const audioElement = document.getElementById('aiAudio') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.play().catch((error) => {
+          console.error("Error playing audio:", error);
+          setErrorMessage("Error playing audio. Please try again.");
+        });
+      }
+    }
+  }, [audioUrl]);
 
   return (
     <section className="max-w-md w-full flex flex-col gap-y-5 rounded-xl overflow-hidden mx-auto">
@@ -173,33 +188,58 @@ const VoiceInput = () => {
             } color-white py-3 rounded-sm`}
             onClick={handleOnRecord}
           >
-            {isActive ? (
-              <FaStop className="animate-pulse w-4 h-4" />
-            ) : (
-              <FaMicrophone className="w-4 h-4" />
-            )}
-            {isActive ? 'Stop' : 'Ask AI'}
+            {
+              isActive ? (
+                <FaStop className="animate-pulse w-4 h-4" />
+              ) : (
+                <FaMicrophone className="w-4 h-4" />
+              )
+            }
+
+            {
+              isActive ? 'Stop' : 'Ask AI'
+            }
           </button>
+
           <p>
             <strong>Surgeon Query:</strong> {text}
           </p>
-          {isLoading ? (
-            <p className="mb-4 animate-pulse text-sm text-gray-500">AI Response: Loading...</p>
-          ) : (
-            <p className="mb-4">
-              <strong>AI Response:</strong> {aiResponse}
-            </p>
-          )}
+          {
+            isLoading ? (
+              <p className="mb-4 animate-pulse text-sm text-gray-500">AI Response: Loading...</p>
+            ) : (
+              <p className="mb-4">
+                <strong>AI Response:</strong> {aiResponse}
+              </p>
+            )
+          }
         </>
       )}
 
-      {/* Audio Player (optional, can be removed if auto-playing) */}
-      {audioUrl && (
-        <audio controls className="mt-4">
-          <source type="audio/mpeg" src={audioUrl} />
-          Your browser does not support the audio element.
-        </audio>
-      )}
+      {/* Display Error Messages */}
+      {
+        errorMessage && (
+          <div className="bg-red-100 text-red-700 p-2 rounded mt-2">
+            {errorMessage}
+          </div>
+        )
+      }
+
+      {/* Audio Player */}
+      {
+        audioUrl && (
+          <audio
+            key={audioUrl} 
+            id="aiAudio"
+            controls
+            className="mt-4"
+            autoPlay 
+          >
+            <source type="audio/mpeg" src={audioUrl} />
+            Your browser does not support the audio element.
+          </audio>
+        )
+      }
     </section>
   );
 };

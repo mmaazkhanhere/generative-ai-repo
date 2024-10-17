@@ -1,28 +1,20 @@
-export async function POST(request: Request): Promise<Response> {
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest): Promise<Response> {
     try {
-      // Parse the JSON payload from the request body
+
       const requestBody = await request.json();
-  
-      // Validate requestBody fields
+
       if (!requestBody.modelUrl) {
-        return new Response(JSON.stringify({ error: "Missing 'modelUrl' field in the request body." }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new NextResponse("Missing 'modelUrl' field in the request body.", {status: 400})
       }
   
       if (!requestBody.input) {
-        return new Response(JSON.stringify({ error: "Missing 'input' field in the request body." }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new NextResponse("Missing 'input' field in the request body.", {status: 400})
       }
   
       if (!process.env.HUGGING_FACE_TOKEN) {
-        return new Response(JSON.stringify({ error: "Missing 'HUGGING_FACE_TOKEN' environment variable." }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new NextResponse("Missing 'HUGGING_FACE_TOKEN' field in the request body.", {status: 400})
       }
   
       const { modelUrl, input } = requestBody;
